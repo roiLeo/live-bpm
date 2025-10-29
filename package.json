@@ -1,0 +1,40 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "nuxi dev",
+    "build": "nuxi build",
+    "start": "nuxi start",
+    "lint": "eslint --ignore-path .gitignore --ext .js,.ts,.vue .",
+    "lint:quiet": "eslint --quiet --ignore-path .gitignore --ext .js,.ts,.vue .",
+    "lint:fix": "eslint --fix --quiet --ignore-path .gitignore --ext .js,.ts,.vue ."
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,ts,vue}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@nuxt/devtools": "3.0.0",
+    "@nuxt/eslint-config": "^1.10.0",
+    "eslint": "^9.38.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
+    "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.7.1",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@nuxt/ui": "4.1.0",
+    "@nuxtjs/i18n": "^10.1.2",
+    "nuxt": "^4.2.0"
+  },
+  "packageManager": "pnpm@9.15.7"
+}
