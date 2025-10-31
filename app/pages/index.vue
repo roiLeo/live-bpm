@@ -1,12 +1,8 @@
 <template>
-  <div class="max-w-2xl mx-auto">
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-highlighted mb-2">
-        Live BPM Detector
-      </h1>
-      <p class="text-muted">
-        Detect the tempo of live music in real-time
-      </p>
+  <div class="mx-auto max-w-2xl">
+    <div class="mb-8 text-center">
+      <h1 class="text-highlighted mb-2 text-4xl font-bold">Live BPM Detector</h1>
+      <p class="text-muted">Detect the tempo of live music in real-time</p>
     </div>
 
     <UCard>
@@ -24,98 +20,43 @@
       </template>
 
       <div class="mb-6">
-        <div class="text-center py-8 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-          <div class="text-6xl font-bold text-primary mb-2">
+        <div class="rounded-lg bg-neutral-50 py-8 text-center dark:bg-neutral-800">
+          <div class="text-primary mb-2 text-6xl font-bold">
             {{ bpm || '--' }}
           </div>
-          <div class="text-sm text-muted uppercase tracking-wide">
-            BPM
-          </div>
+          <div class="text-muted text-sm tracking-wide uppercase">BPM</div>
           <div v-if="confidence > 0" class="mt-4">
             <UProgress :value="confidence" color="primary" size="sm" />
-            <div class="text-xs text-neutral-500 mt-1">
-              Confidence: {{ confidence }}%
-            </div>
+            <div class="mt-1 text-xs text-neutral-500">Confidence ~{{ confidence }}%</div>
           </div>
         </div>
       </div>
 
-      <div v-show="bpm" class="mb-6">
-        <div class="bg-black rounded-lg overflow-hidden" style="height: 200px">
-          <canvas
-            ref="canvasRef"
-            class="w-full h-full"
-            width="800"
-            height="200"
-          />
+      <div v-show="isListening" class="mb-6">
+        <div class="overflow-hidden rounded-lg bg-black" style="height: 200px">
+          <canvas ref="canvasRef" class="h-full w-full" width="800" height="200" />
         </div>
       </div>
 
-      <UAlert
-        v-if="error.title"
-        color="error"
-        variant="subtle"
-        :title="error.title"
-        :description="error.message"
-        class="mb-4"
-      />
+      <UAlert v-if="error.title" color="error" variant="subtle" :title="error.title" :description="error.message" class="mb-4" />
 
       <div class="flex gap-3">
-        <UButton
-          v-if="!isListening"
-          color="primary"
-          size="xl"
-          block
-          @click="startListening"
-          icon="i-heroicons-microphone"
-        >
-          Start Listening
-        </UButton>
-        <UButton
-          v-else
-          color="error"
-          size="xl"
-          block
-          @click="stopListening"
-          icon="i-heroicons-stop"
-        >
-          Stop Listening
-        </UButton>
+        <UButton v-if="!isListening" color="primary" size="xl" block @click="startListening" icon="i-heroicons-microphone"> Start Listening </UButton>
+        <UButton v-else color="error" size="xl" block @click="stopListening" icon="i-heroicons-stop"> Stop Listening </UButton>
       </div>
 
       <template #footer>
-        <div class="text-xs text-muted">
-          <UIcon name="i-heroicons-information-circle" class="size-4 inline" />
+        <div class="text-muted text-xs">
+          <UIcon name="i-heroicons-information-circle" class="inline size-4" />
           Make sure to allow microphone access. Works best with clear, rhythmic music.
         </div>
       </template>
     </UCard>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-6">
-      <UPageCard
-        :ui="{ leadingIcon: 'size-8', description: 'text-xs' }"
-        title="Live Detection"
-        description="Real-time audio analysis"
-        icon="i-heroicons-speaker-wave"
-        spotlight
-        spotlight-color="primary"
-      />
-      <UPageCard
-        :ui="{ leadingIcon: 'size-8', description: 'text-xs' }"
-        title="Visual Feedback"
-        description="Live waveform display"
-        icon="i-heroicons-chart-bar"
-        spotlight
-        spotlight-color="primary"
-      />
-      <UPageCard
-        :ui="{ leadingIcon: 'size-8', description: 'text-xs' }"
-        title="Instant Results"
-        description="Fast BPM calculation"
-        icon="i-heroicons-bolt"
-        spotlight
-        spotlight-color="primary"
-      />
+    <div class="my-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <UPageCard :ui="{ leadingIcon: 'size-8', description: 'text-xs' }" title="Live Detection" description="Real-time audio analysis" icon="i-heroicons-speaker-wave" spotlight spotlight-color="primary" />
+      <UPageCard :ui="{ leadingIcon: 'size-8', description: 'text-xs' }" title="Visual Feedback" description="Live waveform display" icon="i-heroicons-chart-bar" spotlight spotlight-color="primary" />
+      <UPageCard :ui="{ leadingIcon: 'size-8', description: 'text-xs' }" title="Instant Results" description="Fast BPM calculation" icon="i-heroicons-bolt" spotlight spotlight-color="primary" />
     </div>
   </div>
 </template>
@@ -124,7 +65,7 @@
 const isListening = ref(false)
 const bpm = ref(0)
 const confidence = ref(0)
-const error = ref('')
+const error = ref({ title: '', message: '' })
 
 const audioContextRef = ref(null)
 const analyserRef = ref(null)
@@ -138,8 +79,18 @@ class BPMDetector {
     this.audioContext = audioContext
     this.sampleRate = audioContext.sampleRate
     this.intervals = []
-    this.lastPeakTime = 0
-    this.threshold = 0.3
+    // start lastPeakTime at the current audio context time so the
+    // first detected peak doesn't produce a huge interval
+    this.lastPeakTime = audioContext.currentTime
+
+    // base (minimum) threshold and adaptive RMS tracking
+    // NOTE: lowered the base threshold because RMS values from
+    // getByteTimeDomainData are typically small (0.01-0.1)
+    this.threshold = 0.02
+    this.avgRms = 0
+    this.alpha = 0.92 // smoothing for running RMS average
+    this.thresholdMultiplier = 2.2
+    this.minAbsoluteThreshold = 0.01
     this.minTimeBetweenPeaks = 0.3 // 200 BPM max
     this.maxTimeBetweenPeaks = 1.2 // 50 BPM min
   }
@@ -155,10 +106,13 @@ class BPMDetector {
     }
     const rms = Math.sqrt(sum / dataArray.length)
 
-    // Detect peak
-    if (rms > this.threshold &&
-        currentTime - this.lastPeakTime > this.minTimeBetweenPeaks) {
+    // update running average RMS
+    this.avgRms = this.alpha * this.avgRms + (1 - this.alpha) * rms
 
+    const dynamicThreshold = Math.max(this.threshold, this.avgRms * this.thresholdMultiplier, this.minAbsoluteThreshold)
+
+    // Detect peak using adaptive threshold
+    if (rms > dynamicThreshold && currentTime - this.lastPeakTime > this.minTimeBetweenPeaks) {
       const interval = currentTime - this.lastPeakTime
 
       if (interval < this.maxTimeBetweenPeaks) {
@@ -181,19 +135,16 @@ class BPMDetector {
       const q3 = sorted[Math.floor(sorted.length * 0.75)]
       const iqr = q3 - q1
 
-      const filtered = sorted.filter(val =>
-        val >= q1 - 1.5 * iqr && val <= q3 + 1.5 * iqr
-      )
+      const filtered = sorted.filter((val) => val >= q1 - 1.5 * iqr && val <= q3 + 1.5 * iqr)
 
       if (filtered.length > 0) {
         const avgInterval = filtered.reduce((a, b) => a + b, 0) / filtered.length
         const calculatedBPM = 60 / avgInterval
 
         // Confidence based on consistency
-        const variance = filtered.reduce((sum, val) =>
-          sum + Math.pow(val - avgInterval, 2), 0) / filtered.length
+        const variance = filtered.reduce((sum, val) => sum + Math.pow(val - avgInterval, 2), 0) / filtered.length
         const stdDev = Math.sqrt(variance)
-        const conf = Math.max(0, Math.min(100, 100 - (stdDev * 100)))
+        const conf = Math.max(0, Math.min(100, 100 - stdDev * 100))
 
         return { bpm: Math.round(calculatedBPM), confidence: Math.round(conf) }
       }
@@ -239,7 +190,7 @@ const drawWaveform = () => {
 
     for (let i = 0; i < bufferLength; i++) {
       const v = dataArray[i] / 128.0
-      const y = v * canvas.height / 2
+      const y = (v * canvas.height) / 2
 
       if (i === 0) {
         canvasCtx.moveTo(x, y)
@@ -259,20 +210,22 @@ const drawWaveform = () => {
 
 const startListening = async () => {
   try {
-    error.value = {
-      title: '',
-      message: ''
-    }
+    error.value = { title: '', message: '' }
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     mediaStreamRef.value = stream
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    // make sure the context is running (some browsers start in 'suspended')
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume()
+    }
     audioContextRef.value = audioContext
 
     const analyser = audioContext.createAnalyser()
     analyser.fftSize = 2048
-    analyser.smoothingTimeConstant = 0.8
+    // reduce smoothing so transient peaks are preserved for beat detection
+    analyser.smoothingTimeConstant = 0.3
     analyserRef.value = analyser
 
     const source = audioContext.createMediaStreamSource(stream)
@@ -291,18 +244,35 @@ const startListening = async () => {
   }
 }
 
-const stopListening = () => {
+const stopListening = async () => {
+  // stop the animation loop
   if (animationFrameRef.value) {
     cancelAnimationFrame(animationFrameRef.value)
+    animationFrameRef.value = null
   }
 
+  // stop all media tracks
   if (mediaStreamRef.value) {
-    mediaStreamRef.value.getTracks().forEach(track => track.stop())
+    mediaStreamRef.value.getTracks().forEach((track) => track.stop())
+    mediaStreamRef.value = null
   }
 
+  // close audio context only if not already closed
   if (audioContextRef.value) {
-    audioContextRef.value.close()
+    try {
+      if (audioContextRef.value.state !== 'closed') {
+        await audioContextRef.value.close()
+      }
+    } catch (err) {
+      // avoid unhandled promise rejection
+      console.warn('Error closing audio context:', err)
+    }
+    audioContextRef.value = null
   }
+
+  // clear other refs
+  analyserRef.value = null
+  bpmDetectorRef.value = null
 
   isListening.value = false
   bpm.value = 0

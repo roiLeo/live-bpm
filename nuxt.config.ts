@@ -1,7 +1,7 @@
 export default defineNuxtConfig({
   app: {
     head: {
-      title: 'Next',
+      title: 'Live BPM - Real-Time BPM Detector',
       charset: 'utf-8',
       viewport: 'width=device-width, initial-scale=1',
     }
