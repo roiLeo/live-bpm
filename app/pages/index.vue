@@ -26,7 +26,7 @@
           </div>
           <div class="text-muted text-sm tracking-wide uppercase">BPM</div>
           <div v-if="confidence > 0" class="mt-4">
-            <UProgress :value="confidence" color="primary" size="sm" />
+            <UProgress :value="confidence" color="primary" size="sm" animation="elastic" />
             <div class="mt-1 text-xs text-neutral-500">Confidence ~{{ confidence }}%</div>
           </div>
         </div>

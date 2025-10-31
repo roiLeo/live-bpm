@@ -1,47 +1,64 @@
-# Nuxtplate 🍽
 
-> Look at the [nuxt documentation](https://nuxt.com/) to learn more.
+# Live BPM Detector
 
-This is the Nuxtjs boilerplate. It contains the following conventions/features:
+A Nuxt 4 web app for real-time BPM (beats per minute) detection from live audio input. Visualizes waveform and tempo, designed for musicians, DJs, and anyone needing instant tempo feedback.
 
-- [x] 🪲 [Typescript](https://www.typescriptlang.org/)
-- [x] 💚 [Nuxt](https://nuxt.com//)
-- [x] 🌊 [Nuxt UI](https://ui.nuxt.com/)
-- [x] ✨ [Eslint](https://eslint.org/) & [Prettier](https://prettier.io/)
-- [x] 🐕 [Husky](https://github.com/typicode/husky) git hooks
+## Features
+- Real-time BPM calculation from microphone input
+- Live waveform visualization
+- Confidence meter for BPM accuracy
+- Responsive UI with Nuxt UI components
+- Works best with clear, rhythmic music or metronome
 
-## Setup
+## Getting Started
 
-Make sure to install the dependencies:
+### Prerequisites
+- Node.js (v18+ recommended)
+- pnpm (recommended)
 
+### Install dependencies
 ```bash
-yarn
+pnpm install
 ```
 
-## Development Server
-
-Start the development server on http://localhost:3000
-
+### Run in development mode
 ```bash
-yarn dev
+pnpm dev
 ```
 
-## Production
+App will start on `http://localhost:3000` (default Nuxt port).
 
-Build the application for production:
-
+### Build for production
 ```bash
-yarn build
+pnpm build
 ```
 
-Locally preview production build:
-
+### Start production server
 ```bash
-yarn preview
+pnpm start
 ```
 
-## Deployment
+## Usage
+1. Open the app in your browser.
+2. Click **Start Listening** and allow microphone access.
+3. Play music, use a metronome, or clap near the mic.
+4. The BPM and confidence will update in real time.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FroiLeo%2FNuxtplate) [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/roiLeo/Nuxtplate)
+## Troubleshooting
+- If BPM is not detected, try louder or clearer beats.
+- Make sure microphone permissions are granted.
+- Use a metronome or drum loop for best results.
+- Check browser console for debug logs if needed.
 
-Checkout the [deployment documentation](https://nuxt.com//guide/deploy/presets) for more information.
+## Project Structure
+- `app/pages/index.vue` — main BPM detection and UI logic
+- `app/components/` — UI components
+- `app/assets/css/` — styles
+- `nuxt.config.ts` — Nuxt configuration
+
+## License
+WTFPL
+
+---
+
+Made with Nuxt 4 and ❤️ for live music analysis.
