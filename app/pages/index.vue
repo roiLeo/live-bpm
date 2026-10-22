@@ -21,15 +21,30 @@
 
       <div class="mb-6">
         <div class="rounded-lg bg-neutral-50 py-8 text-center dark:bg-neutral-800">
-          <div class="text-primary mb-2 text-6xl font-bold">
-            {{ bpm || '--' }}
+          <div class="relative inline-block">
+            <span class="absolute top-1/2 -left-8 size-4 -translate-y-1/2 rounded-full transition-all duration-100" :class="beatOn ? 'bg-primary scale-125' : 'bg-neutral-300 dark:bg-neutral-600'" />
+            <div class="text-primary mb-2 text-6xl font-bold">
+              {{ bpm ? Math.round(bpm) : '--' }}
+            </div>
           </div>
-          <div class="text-muted text-sm tracking-wide uppercase">BPM</div>
+          <div class="text-muted text-sm tracking-wide uppercase">
+            BPM<span v-if="bpm" class="ml-2 normal-case">({{ bpm.toFixed(1) }})</span>
+          </div>
+          <div v-if="isListening && statusText" class="text-muted mt-3 px-4 text-xs">{{ statusText }}</div>
+          <UProgress v-if="isListening && status === 'warming'" :model-value="warmup * 100" size="xs" class="mx-auto mt-2 max-w-48" />
           <div v-if="confidence > 0" class="mt-4">
-            <UProgress :value="confidence" color="primary" size="sm" animation="elastic" />
+            <UProgress :model-value="confidence" color="primary" size="sm" animation="elastic" />
             <div class="mt-1 text-xs text-neutral-500">Confidence ~{{ confidence }}%</div>
           </div>
+          <div v-if="isListening" class="mt-4 flex items-center justify-center gap-2">
+            <UButton size="xs" :variant="tempoScale === 0.5 ? 'solid' : 'outline'" color="neutral" @click="toggleHalfTime">&frac12;&times;</UButton>
+            <UButton size="xs" :variant="tempoScale === 2 ? 'solid' : 'outline'" color="neutral" @click="toggleDoubleTime">2&times;</UButton>
+          </div>
         </div>
+      </div>
+
+      <div v-if="isListening" class="mb-6" aria-label="Input level">
+        <UProgress :model-value="level * 100" size="xs" :color="tooQuiet ? 'warning' : 'success'" />
       </div>
 
       <div v-show="isListening" class="mb-6">
@@ -63,5 +78,18 @@
 
 <script setup>
 const canvasRef = ref(null)
-const { isListening, bpm, confidence, error, start: startListening, stop: stopListening } = useBpmDetector(canvasRef)
+const { isListening, bpm, confidence, status, warmup, level, tooQuiet, beat, tempoScale, error, start: startListening, stop: stopListening, toggleHalfTime, toggleDoubleTime } = useBpmDetector(canvasRef)
+
+const beatOn = ref(false)
+watch(beat, () => {
+  beatOn.value = true
+  setTimeout(() => (beatOn.value = false), 120)
+})
+
+const statusText = computed(() => {
+  if (tooQuiet.value) return 'Too quiet – move closer to the music or raise the volume'
+  if (status.value === 'warming') return 'Listening…'
+  if (status.value === 'searching') return 'Searching for a steady beat…'
+  return ''
+})
 </script>

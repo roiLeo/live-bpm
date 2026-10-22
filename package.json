@@ -6,7 +6,8 @@
     "start": "nuxi start",
     "lint": "eslint --ignore-path .gitignore --ext .js,.ts,.vue .",
     "lint:quiet": "eslint --quiet --ignore-path .gitignore --ext .js,.ts,.vue .",
-    "lint:fix": "eslint --fix --quiet --ignore-path .gitignore --ext .js,.ts,.vue ."
+    "lint:fix": "eslint --fix --quiet --ignore-path .gitignore --ext .js,.ts,.vue .",
+    "test": "vitest run"
   },
   "husky": {
     "hooks": {
@@ -29,7 +30,8 @@
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
   },
   "dependencies": {
     "@nuxt/ui": "4.12.0",
